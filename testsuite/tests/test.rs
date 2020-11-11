@@ -4,20 +4,20 @@
 use snakebit as _;
 
 #[defmt_test::tests]
-mod game_logic {
+mod tests {
     #[test]
-    fn steps_in_direction() {
+    fn steps_north() {
         use heapless::Vec;
         use snakebit::{step, Coord, Direction, GameState};
 
         let mut state = GameState {
-            snake: Vec::new(),
+            snake: Vec::from_slice(&[Coord { x: 2, y: 0 }]).unwrap(),
             dir: Direction::North,
         };
 
-        let _ = state.snake.push(Coord { x: 2, y: 0 });
         step(&mut state);
+
         assert!(state.snake.len() == 1);
-        assert_eq!(Coord { x: 2, y: 1 }, state.snake[0]);
+        assert_eq!(Vec::from_slice(&[Coord { x: 2, y: 1 }]), Ok(state.snake));
     }
 }

@@ -17,7 +17,7 @@ pub enum Direction {
     East
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Coord {
     pub x: u8,
     pub y: u8,

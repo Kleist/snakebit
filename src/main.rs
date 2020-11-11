@@ -6,6 +6,10 @@ use snakebit as _; // global logger + panicking-behavior + memory layout
 use heapless::Vec;
 
 use microbit::hal::nrf51;
+
+// use microbit::display::image::GreyscaleImage;
+use microbit::display::{self, Display, /*Frame,*/ MicrobitDisplayTimer, MicrobitFrame};
+
 use rtic::app;
 
 use snakebit::GameState;
@@ -18,11 +22,13 @@ const APP: () = {
         state: GameState,
         gpio: nrf51::GPIO,
         gpiote: nrf51::GPIOTE,
+        display_timer: MicrobitDisplayTimer<nrf51::TIMER1>,
+        display: Display<MicrobitFrame>,
     }
 
     #[init]
     fn init(cx: init::Context) -> init::LateResources {
-        let p: nrf51::Peripherals = cx.device;
+        let mut p: nrf51::Peripherals = cx.device;
 
         defmt::info!("init");
 
@@ -64,10 +70,15 @@ const APP: () = {
         let mut state = GameState{height: 5, width: 5, snake: Vec::new(), dir: Direction::North};
         let _ = state.snake.push(Coord{x:2,y:0});
 
+        let mut timer = MicrobitDisplayTimer::new(p.TIMER1);
+        display::initialise_display(&mut timer, &mut p.GPIO);
+
         init::LateResources {
             state: state,
             gpio: p.GPIO,
             gpiote: p.GPIOTE,
+            display_timer: timer,
+            display: Display::new(),
         }
     }
 

@@ -24,6 +24,7 @@ features = ["print-defmt"]
 cortex-m = "0.6.4"
 cortex-m-rt = "0.6.13"
 cortex-m-rtic = "0.5"
+heapless = "0.5.6"
 
 [dependencies.microbit]
 git = "https://github.com/therealprof/microbit"

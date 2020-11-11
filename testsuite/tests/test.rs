@@ -10,8 +10,4 @@ mod tests {
        assert!(true)
    }
 
-   #[test]
-   fn assert_false() {
-       assert!(false)
-   }
 }

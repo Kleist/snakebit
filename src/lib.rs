@@ -7,6 +7,30 @@ use panic_probe as _;
 
 use microbit::hal::nrf51 as _;
 
+use heapless::Vec;
+use heapless::consts::U32;
+
+pub enum Direction {
+    North,
+    West,
+    South,
+    East
+}
+
+pub struct Coord {
+    pub x: u8,
+    pub y: u8,
+}
+
+pub struct GameState {
+    pub snake: Vec<Coord, U32>,
+    pub dir: Direction
+}
+
+pub fn step(state: GameState) -> GameState {
+    return state;
+}
+
 #[defmt::timestamp]
 fn timestamp() -> u64 {
     static COUNT: AtomicUsize = AtomicUsize::new(0);

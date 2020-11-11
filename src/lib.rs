@@ -23,6 +23,12 @@ pub struct Coord {
     pub y: u8,
 }
 
+const MAX_HEIGHT: u8 = 5;
+const MAX_WIDTH: u8 = 5;
+
+const NORTH_EDGE: u8 = MAX_HEIGHT-1;
+const EAST_EDGE: u8 = MAX_WIDTH-1;
+
 pub struct GameState {
     pub snake: Vec<Coord, U32>,
     pub height: u8,
@@ -30,29 +36,22 @@ pub struct GameState {
     pub dir: Direction,
 }
 
-pub fn next(coord: &Coord, dir: &Direction) -> Coord {
-    match dir {
-        Direction::North => Coord {
-            x: coord.x,
-            y: coord.y + 1,
-        },
-        Direction::West => Coord {
-            x: coord.x - 1,
-            y: coord.y,
-        },
-        Direction::East => Coord {
-            x: coord.x + 1,
-            y: coord.y,
-        },
-        Direction::South => Coord {
-            x: coord.x,
-            y: coord.y - 1,
-        },
+pub fn next(coord: &Coord, dir: &Direction) -> Option<Coord> {
+    use Direction::*;
+    match (dir,coord.x,coord.y) {
+        (North, _, NORTH_EDGE) => None,
+        (East, EAST_EDGE, _) => None,
+        (West, 0, _) => None,
+        (South, _, 0) => None,
+        (North, x, y) => Some(Coord{x,y:y+1}),
+        (East, x, y) => Some(Coord{x:x+1,y}),
+        (West, x, y) => Some(Coord{x:x-1,y}),
+        (South, x, y) => Some(Coord{x,y:y-1}),
     }
 }
 
 pub fn step(state: &mut GameState) {
-    state.snake[0] = next(&state.snake[0], &state.dir)
+    state.snake[0] = next(&state.snake[0], &state.dir).unwrap()
 }
 
 #[defmt::timestamp]

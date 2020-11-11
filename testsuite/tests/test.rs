@@ -1,12 +1,20 @@
 #![no_std]
 #![no_main]
 
-use cortex_m_rt::entry;
-use snakebit as _; // memory layout + panic handler
+use defmt_rtt as _; // global logger
+use panic_probe as _;
 
-#[entry]
-fn main() -> ! {
-    // assert!(false, "TODO: Write actual tests");
+use microbit::hal::nrf51 as _;
 
-    snakebit::exit();
+#[defmt_test::tests]
+mod tests {
+   #[test]
+   fn assert_true() {
+       assert!(true)
+   }
+
+   #[test]
+   fn assert_false() {
+       assert!(false)
+   }
 }

@@ -24,8 +24,11 @@ branch = "main"
 
 [dependencies.panic-probe]
 path = "../../ext/probe-run/panic-probe"
-# enable the `print-defmt` feature for more complete test output
 features = ["print-defmt"]
+
+[dependencies.microbit]
+git = "https://github.com/therealprof/microbit"
+branch = "master"
 
 [dependencies]
 snakebit = { path = ".." }

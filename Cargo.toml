@@ -17,8 +17,8 @@ git = "https://github.com/knurling-rs/defmt"
 branch = "main"
 
 [dependencies.panic-probe]
-git = "https://github.com/knurling-rs/probe-run"
-branch = "main"
+path = "../ext/probe-run/panic-probe"
+features = ["print-defmt"]
 
 [dependencies]
 cortex-m = "0.6.4"

@@ -1,12 +1,12 @@
 #![no_main]
 #![no_std]
 
-use knurling_test as _; // global logger + panicking-behavior + memory layout
+use snakebit as _; // global logger + panicking-behavior + memory layout
 
 #[cortex_m_rt::entry]
 fn main() -> ! {
     ack(10, 10);
-    knurling_test::exit()
+    snakebit::exit()
 }
 
 fn ack(m: u32, n: u32) -> u32 {

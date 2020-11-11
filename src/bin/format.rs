@@ -1,7 +1,7 @@
 #![no_main]
 #![no_std]
 
-use knurling_test as _; // global logger + panicking-behavior + memory layout
+use snakebit as _; // global logger + panicking-behavior + memory layout
 use defmt::Format; // <- derive attribute
 
 #[derive(Format)]
@@ -22,5 +22,5 @@ fn main() -> ! {
     let x = 42;
     defmt::info!("x={:u8}", x);
 
-    knurling_test::exit()
+    snakebit::exit()
 }

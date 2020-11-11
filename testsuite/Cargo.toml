@@ -28,7 +28,7 @@ path = "../../ext/probe-run/panic-probe"
 features = ["print-defmt"]
 
 [dependencies]
-knurling_test = { path = ".." }
+snakebit = { path = ".." }
 cortex-m = "0.6.3"
 cortex-m-rt = "0.6.12"
 

@@ -61,7 +61,7 @@ const APP: () = {
         p.GPIOTE.intenset.write(|w| w.in1().set_bit());
         p.GPIOTE.events_in[1].write(|w| unsafe { w.bits(0) });
 
-        let mut state = GameState{snake: Vec::new(), dir: Direction::North};
+        let mut state = GameState{height: 5, width: 5, snake: Vec::new(), dir: Direction::North};
         let _ = state.snake.push(Coord{x:2,y:0});
 
         init::LateResources {

@@ -7,14 +7,14 @@ use panic_probe as _;
 
 use microbit::hal::nrf51 as _;
 
-use heapless::Vec;
 use heapless::consts::U32;
+use heapless::Vec;
 
 pub enum Direction {
     North,
     West,
     South,
-    East
+    East,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -25,11 +25,34 @@ pub struct Coord {
 
 pub struct GameState {
     pub snake: Vec<Coord, U32>,
-    pub dir: Direction
+    pub height: u8,
+    pub width: u8,
+    pub dir: Direction,
+}
+
+pub fn next(coord: &Coord, dir: &Direction) -> Coord {
+    match dir {
+        Direction::North => Coord {
+            x: coord.x,
+            y: coord.y + 1,
+        },
+        Direction::West => Coord {
+            x: coord.x - 1,
+            y: coord.y,
+        },
+        Direction::East => Coord {
+            x: coord.x + 1,
+            y: coord.y,
+        },
+        Direction::South => Coord {
+            x: coord.x,
+            y: coord.y - 1,
+        },
+    }
 }
 
 pub fn step(state: &mut GameState) {
-    state.snake[0].y = 1
+    state.snake[0] = next(&state.snake[0], &state.dir)
 }
 
 #[defmt::timestamp]

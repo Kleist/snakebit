@@ -17,6 +17,7 @@ pub enum Direction {
     East
 }
 
+#[derive(Debug, PartialEq)]
 pub struct Coord {
     pub x: u8,
     pub y: u8,
@@ -27,8 +28,8 @@ pub struct GameState {
     pub dir: Direction
 }
 
-pub fn step(state: GameState) -> GameState {
-    return state;
+pub fn step(state: &mut GameState) {
+    state.snake[0].y = 1
 }
 
 #[defmt::timestamp]

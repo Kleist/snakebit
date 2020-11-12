@@ -16,7 +16,7 @@ pub enum Direction {
     East,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Coord {
     pub x: u8,
     pub y: u8,
@@ -47,8 +47,18 @@ pub fn next(coord: &Coord, dir: &Direction) -> Option<Coord> {
     }
 }
 
-pub fn step(state: &mut GameState) {
-    state.snake[0] = next(&state.snake[0], &state.dir).unwrap()
+pub fn step(state: &mut GameState) -> bool {
+    if let Some(new_coord) = next(&state.snake[0], &state.dir) {
+        let len = state.snake.len();
+        for i in 1..len {
+            state.snake[len-i] = state.snake[len-i-1];
+        }
+        state.snake[0] = new_coord;
+        true
+    }
+    else {
+        false
+    }
 }
 
 pub fn turn_left(state: &mut GameState) {

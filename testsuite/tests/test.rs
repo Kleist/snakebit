@@ -39,14 +39,29 @@ mod tests {
         use snakebit::{step, Coord, Direction, GameState};
 
         let mut state = GameState {
-            snake: Vec::from_slice(&[Coord { x: 2, y: 0 }]).unwrap(),
+            snake: Vec::from_slice(&[Coord { x: 2, y: 1 }, Coord { x: 2, y: 0 }]).unwrap(),
             dir: Direction::North,
         };
 
-        step(&mut state);
+        assert_eq!(true, step(&mut state));
 
-        assert_eq!(Vec::from_slice(&[Coord { x: 2, y: 1 }]), Ok(state.snake));
+        assert_eq!(Vec::from_slice(&[Coord { x: 2, y: 2 }, Coord { x: 2, y: 1 }]), Ok(state.snake));
+        assert_eq!(Direction::North, state.dir);
     }
+
+    #[test]
+    fn test_step_outside() {
+        use heapless::Vec;
+        use snakebit::{step, Coord, Direction, GameState};
+
+        let mut state = GameState {
+            snake: Vec::from_slice(&[Coord { x: 2, y: 4 }, Coord { x: 2, y: 3 }]).unwrap(),
+            dir: Direction::North,
+        };
+
+        assert_eq!(false, step(&mut state));
+    }
+
 
     #[test]
     fn test_turn() {

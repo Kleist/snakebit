@@ -4,6 +4,7 @@ use defmt_rtt as _; // global logger
 use panic_probe as _;
 
 use microbit::hal::nrf51 as _;
+use microbit::display::image::BitImage;
 
 use heapless::consts::U32;
 use heapless::Vec;
@@ -85,7 +86,7 @@ pub fn turn_right(state: &mut GameState) {
     }
 }
 
-pub fn render(snake: &[Coord]) -> [[u8;5];5] {
+pub fn render(snake: &[Coord]) -> BitImage {
     let mut frame = [
         [0,0,0,0,0],
         [0,0,0,0,0],
@@ -94,9 +95,9 @@ pub fn render(snake: &[Coord]) -> [[u8;5];5] {
         [0,0,0,0,0]
     ];
     for coord in snake.iter() {
-        frame[4-coord.y as usize][coord.x as usize] = 1;
+        frame[coord.y as usize][coord.x as usize] = 1;
     }
-    frame
+    BitImage::new(&frame)
 }
 
 /// Terminates the application and makes `probe-run` exit with exit-code = 0

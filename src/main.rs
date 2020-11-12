@@ -7,7 +7,6 @@ use heapless::Vec;
 
 use microbit::hal::nrf51;
 
-use microbit::display::image::GreyscaleImage;
 use microbit::display::{self, Display, Frame, MicrobitDisplayTimer, MicrobitFrame};
 
 use rtic::app;
@@ -15,17 +14,6 @@ use rtic::app;
 use snakebit::Coord;
 use snakebit::Direction;
 use snakebit::GameState;
-
-fn heart_image(inner_brightness: u8) -> GreyscaleImage {
-    let b = inner_brightness;
-    GreyscaleImage::new(&[
-        [0, 7, 0, 7, 0],
-        [7, b, 7, b, 7],
-        [7, b, b, b, 7],
-        [0, 7, b, 7, 0],
-        [0, 0, 7, 0, 0],
-    ])
-}
 
 #[app(device = microbit::hal::nrf51, peripherals = true)]
 const APP: () = {
@@ -96,14 +84,12 @@ const APP: () = {
         }
     }
 
-    #[task(binds = GPIOTE, priority = 1, resources=[gpiote, display])]
+    #[task(binds = GPIOTE, priority = 1, resources=[gpiote, display, state])]
     fn btn(mut cx: btn::Context) {
         static mut FRAME: MicrobitFrame = MicrobitFrame::const_default();
-        static mut STEP: u8 = 3;
         let gpiote = cx.resources.gpiote;
         let a_pressed = gpiote.events_in[0].read().bits() != 0;
         let b_pressed = gpiote.events_in[1].read().bits() != 0;
-
         let _ = defmt::info!(
             "Button pressed {:?}\n\r",
             match (a_pressed, b_pressed) {
@@ -118,19 +104,22 @@ const APP: () = {
         gpiote.events_in[0].write(|w| unsafe { w.bits(0) });
         gpiote.events_in[1].write(|w| unsafe { w.bits(0) });
 
-        let increment:u8 = match(*STEP, a_pressed, b_pressed) {
-            (7, true, false) => 7,
-            (0, false, true) => 0,
-            (x, true, _) => x+1,
-            (x, _, true) => x-1,
-            (x, _, _) => x,
-        };
-        defmt::info!("increment: {:?}", increment);
-        *STEP = increment;
-        FRAME.set(&mut heart_image(*STEP));
-        cx.resources.display.lock(|display| {
-            display.set_frame(&FRAME);
-        });
+        let state = &mut cx.resources.state;
+        if a_pressed {
+            snakebit::turn_left(state);
+        }
+        if b_pressed {
+            snakebit::turn_right(state);
+        }
+        if snakebit::step(state) {
+            FRAME.set(&snakebit::render(&state.snake));
+            cx.resources.display.lock(|display| {
+                display.set_frame(&FRAME);
+            });
+        }
+        else {
+            defmt::info!("Game over");
+        }
     }
 
     #[task(binds = TIMER1, priority = 2, resources = [display_timer, gpio, display])]

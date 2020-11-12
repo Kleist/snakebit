@@ -123,32 +123,21 @@ mod tests {
 
     #[test]
     fn test_render_1() {
+        use tiny_led_matrix::Render;
         use snakebit::{Coord,render};
-        let expected = [
-            [0, 0, 0, 0, 0], // y=4
-            [0, 0, 0, 0, 0], // y=3
-            [0, 0, 0, 0, 0], // y=2
-            [0, 0, 0, 0, 0], // y=1
-            [1, 0, 0, 0, 0], // y=0
-            // x from 0 to 4
-        ];
-        assert_eq!(render(&[Coord { x: 0, y: 0 }]), expected);
+        let result = render(&[Coord { x: 0, y: 0 }]);
+        assert_eq!(9, result.brightness_at(0,0));
+        assert_eq!(0, result.brightness_at(1,0));
+        assert_eq!(0, result.brightness_at(0,1));
     }
 
     #[test]
     fn test_render_2() {
+        use tiny_led_matrix::Render;
         use snakebit::{Coord,render};
-        let expected = [
-            [1, 0, 0, 0, 0], // y=4
-            [1, 0, 0, 0, 0], // y=3
-            [0, 0, 0, 0, 0], // y=2
-            [0, 0, 0, 0, 0], // y=1
-            [0, 0, 0, 0, 0], // y=0
-            // x from 0 to 4
-        ];
         let result = render(&[Coord { x: 0, y: 3 }, Coord { x: 0, y: 4 }]);
-        defmt::info!("Render result: {:?}", result);
-        assert_eq!(result, expected);
+        assert_eq!(9, result.brightness_at(0,3));
+        assert_eq!(9, result.brightness_at(0,4));
     }
 
     #[test]

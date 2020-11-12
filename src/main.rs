@@ -5,6 +5,7 @@ use snakebit as _; // global logger + panicking-behavior + memory layout
 
 use heapless::Vec;
 
+use microbit::hal::lo_res_timer::{LoResTimer, FREQ_16HZ};
 use microbit::hal::nrf51;
 
 use microbit::display::{self, Display, Frame, MicrobitDisplayTimer, MicrobitFrame};
@@ -23,6 +24,7 @@ const APP: () = {
         gpiote: nrf51::GPIOTE,
         display_timer: MicrobitDisplayTimer<nrf51::TIMER1>,
         display: Display<MicrobitFrame>,
+        game_timer: LoResTimer<nrf51::RTC0>,
     }
 
     #[init]
@@ -75,30 +77,33 @@ const APP: () = {
         let mut timer = MicrobitDisplayTimer::new(p.TIMER1);
         display::initialise_display(&mut timer, &mut p.GPIO);
 
+        // Starting the low-frequency clock (needed for RTC to work)
+        p.CLOCK.tasks_lfclkstart.write(|w| unsafe { w.bits(1) });
+        while p.CLOCK.events_lfclkstarted.read().bits() == 0 {}
+        p.CLOCK.events_lfclkstarted.reset();
+
+        let mut game_timer = LoResTimer::new(p.RTC0);
+        // 16Hz; 62.5ms period
+        game_timer.set_frequency(FREQ_16HZ);
+        game_timer.enable_tick_event();
+        game_timer.enable_tick_interrupt();
+        game_timer.start();
+
         init::LateResources {
             state: state,
             gpio: p.GPIO,
             gpiote: p.GPIOTE,
             display_timer: timer,
             display: Display::new(),
+            game_timer,
         }
     }
 
     #[task(binds = GPIOTE, priority = 1, resources=[gpiote, display, state])]
     fn btn(mut cx: btn::Context) {
-        static mut FRAME: MicrobitFrame = MicrobitFrame::const_default();
         let gpiote = cx.resources.gpiote;
         let a_pressed = gpiote.events_in[0].read().bits() != 0;
         let b_pressed = gpiote.events_in[1].read().bits() != 0;
-        let _ = defmt::info!(
-            "Button pressed {:?}\n\r",
-            match (a_pressed, b_pressed) {
-                (false, false) => "",
-                (true, false) => "A",
-                (false, true) => "B",
-                (true, true) => "A + B",
-            }
-        );
 
         /* Clear events */
         gpiote.events_in[0].write(|w| unsafe { w.bits(0) });
@@ -111,18 +116,31 @@ const APP: () = {
         if b_pressed {
             snakebit::turn_right(state);
         }
-        if snakebit::step(state) {
-            FRAME.set(&snakebit::render(&state.snake));
-            cx.resources.display.lock(|display| {
-                display.set_frame(&FRAME);
-            });
+    }
+
+    #[task(binds = RTC0, priority = 1,
+        resources = [game_timer, state, display])]
+    fn game_tick(mut cx: game_tick::Context) {
+        static mut FRAME: MicrobitFrame = MicrobitFrame::const_default();
+        static mut STEP: u8 = 0;
+        &cx.resources.game_timer.clear_tick_event();
+        if *STEP < 5 {
+            *STEP += 1;
         }
-        else {
-            defmt::info!("Game over");
+        let state = &mut cx.resources.state;
+        if *STEP == 5 {
+            if snakebit::step(state) {
+                *STEP = 0;
+                FRAME.set(&snakebit::render(&state.snake));
+                cx.resources.display.set_frame(&FRAME);
+            } else {
+                *STEP = 10;
+                defmt::info!("Game over");
+            }
         }
     }
 
-    #[task(binds = TIMER1, priority = 2, resources = [display_timer, gpio, display])]
+    #[task(binds = TIMER1, priority = 1, resources = [display_timer, gpio, display])]
     fn timer1(mut cx: timer1::Context) {
         display::handle_display_event(
             &mut cx.resources.display,

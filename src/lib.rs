@@ -51,14 +51,18 @@ pub fn step(state: &mut GameState) -> bool {
     if let Some(new_coord) = next(&state.snake[0], &state.dir) {
         let len = state.snake.len();
         for i in 1..len {
+            if new_coord == state.snake[len-i-1] {
+                defmt::info!("Ran over tail");
+                return false;
+            }
             state.snake[len-i] = state.snake[len-i-1];
         }
         state.snake[0] = new_coord;
-        true
+        return true;
     }
-    else {
-        false
-    }
+    
+    defmt::info!("Ran out of bounds");
+    return false;
 }
 
 pub fn turn_left(state: &mut GameState) {
@@ -79,6 +83,20 @@ pub fn turn_right(state: &mut GameState) {
         East => South,
         North => East
     }
+}
+
+pub fn render(snake: &[Coord]) -> [[u8;5];5] {
+    let mut frame = [
+        [0,0,0,0,0],
+        [0,0,0,0,0],
+        [0,0,0,0,0],
+        [0,0,0,0,0],
+        [0,0,0,0,0]
+    ];
+    for coord in snake.iter() {
+        frame[4-coord.y as usize][coord.x as usize] = 1;
+    }
+    frame
 }
 
 /// Terminates the application and makes `probe-run` exit with exit-code = 0

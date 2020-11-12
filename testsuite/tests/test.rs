@@ -3,34 +3,46 @@
 
 pub mod a {
     use snakebit::{Coord, Direction, GameState};
-    pub fn state_with_dir(dir: Direction) -> GameState{
+    pub fn state_with_dir(dir: Direction) -> GameState {
         use heapless::Vec;
         GameState {
-            snake: Vec::from_slice(&[Coord{ x:1, y:0}]).unwrap(),
-            dir: dir
+            snake: Vec::from_slice(&[Coord { x: 1, y: 0 }]).unwrap(),
+            dir: dir,
         }
-    }    
+    }
 }
 #[defmt_test::tests]
 mod tests {
     #[test]
     fn test_next() {
-        use snakebit::{Coord, Direction, next};
+        use snakebit::{next, Coord, Direction};
 
-        assert_eq!(Some(Coord{x:1,y:2}), next(&Coord{x:1,y:1}, &Direction::North));
-        assert_eq!(Some(Coord{x:2,y:1}), next(&Coord{x:1,y:1}, &Direction::East));
-        assert_eq!(Some(Coord{x:0,y:1}), next(&Coord{x:1,y:1}, &Direction::West));
-        assert_eq!(Some(Coord{x:1,y:0}), next(&Coord{x:1,y:1}, &Direction::South));
+        assert_eq!(
+            Some(Coord { x: 1, y: 2 }),
+            next(&Coord { x: 1, y: 1 }, &Direction::North)
+        );
+        assert_eq!(
+            Some(Coord { x: 2, y: 1 }),
+            next(&Coord { x: 1, y: 1 }, &Direction::East)
+        );
+        assert_eq!(
+            Some(Coord { x: 0, y: 1 }),
+            next(&Coord { x: 1, y: 1 }, &Direction::West)
+        );
+        assert_eq!(
+            Some(Coord { x: 1, y: 0 }),
+            next(&Coord { x: 1, y: 1 }, &Direction::South)
+        );
     }
 
     #[test]
     fn test_next_outside() {
-        use snakebit::{Coord, Direction, next};
+        use snakebit::{next, Coord, Direction};
 
-        assert_eq!(None, next(&Coord{x:2,y:4}, &Direction::North));
-        assert_eq!(None, next(&Coord{x:4,y:2}, &Direction::East));
-        assert_eq!(None, next(&Coord{x:0,y:2}, &Direction::West));
-        assert_eq!(None, next(&Coord{x:2,y:0}, &Direction::South));
+        assert_eq!(None, next(&Coord { x: 2, y: 4 }, &Direction::North));
+        assert_eq!(None, next(&Coord { x: 4, y: 2 }, &Direction::East));
+        assert_eq!(None, next(&Coord { x: 0, y: 2 }, &Direction::West));
+        assert_eq!(None, next(&Coord { x: 2, y: 0 }, &Direction::South));
     }
 
     #[test]
@@ -43,9 +55,12 @@ mod tests {
             dir: Direction::North,
         };
 
-        assert_eq!(true, step(&mut state));
+        assert!(step(&mut state));
 
-        assert_eq!(Vec::from_slice(&[Coord { x: 2, y: 2 }, Coord { x: 2, y: 1 }]), Ok(state.snake));
+        assert_eq!(
+            Vec::from_slice(&[Coord { x: 2, y: 2 }, Coord { x: 2, y: 1 }]),
+            Ok(state.snake)
+        );
         assert_eq!(Direction::North, state.dir);
     }
 
@@ -59,14 +74,87 @@ mod tests {
             dir: Direction::North,
         };
 
-        assert_eq!(false, step(&mut state));
+        assert!(!step(&mut state));
     }
 
+    #[test]
+    fn test_step_just_behind() {
+        use heapless::Vec;
+        use snakebit::{step, Coord, Direction, GameState};
+
+        /*
+        h = head
+        t = tail
+        * = body
+          (y)
+          1  h*
+          0  t*
+            012 (x)
+        */
+        let mut state = GameState {
+            snake: Vec::from_slice(&[Coord { x: 1, y: 1 }, Coord { x: 2, y: 1 }, Coord { x: 2, y: 0 }, Coord { x: 1, y: 0 }]).unwrap(),
+            dir: Direction::South,
+        };
+
+        assert!(step(&mut state));
+    }
+
+    #[test]
+    fn test_step_over() {
+        use heapless::Vec;
+        use snakebit::{step, Coord, Direction, GameState};
+
+        /*
+        h = head
+        t = tail
+        * = body
+          (y)
+          1  h*
+          0 t**
+            012 (x)
+        */
+        let mut state = GameState {
+            snake: Vec::from_slice(&[Coord { x: 1, y: 1 }, Coord { x: 2, y: 1 }, Coord { x: 2, y: 0 }, Coord { x: 1, y: 0 }, Coord { x: 0, y: 0 }]).unwrap(),
+            dir: Direction::South,
+        };
+
+        assert!(!step(&mut state));
+    }
+
+    #[test]
+    fn test_render_1() {
+        use snakebit::{Coord,render};
+        let expected = [
+            [0, 0, 0, 0, 0], // y=4
+            [0, 0, 0, 0, 0], // y=3
+            [0, 0, 0, 0, 0], // y=2
+            [0, 0, 0, 0, 0], // y=1
+            [1, 0, 0, 0, 0], // y=0
+            // x from 0 to 4
+        ];
+        assert_eq!(render(&[Coord { x: 0, y: 0 }]), expected);
+    }
+
+    #[test]
+    fn test_render_2() {
+        use snakebit::{Coord,render};
+        let expected = [
+            [1, 0, 0, 0, 0], // y=4
+            [1, 0, 0, 0, 0], // y=3
+            [0, 0, 0, 0, 0], // y=2
+            [0, 0, 0, 0, 0], // y=1
+            [0, 0, 0, 0, 0], // y=0
+            // x from 0 to 4
+        ];
+        let result = render(&[Coord { x: 0, y: 3 }, Coord { x: 0, y: 4 }]);
+        defmt::info!("Render result: {:?}", result);
+        assert_eq!(result, expected);
+    }
 
     #[test]
     fn test_turn() {
-        use snakebit::{Direction, turn_left, turn_right};
         use crate::a::state_with_dir;
+        use snakebit::{turn_left, turn_right, Direction};
         let mut state = state_with_dir(Direction::North);
 
         turn_left(&mut state);
@@ -92,6 +180,5 @@ mod tests {
 
         turn_right(&mut state);
         assert_eq!(state.dir, Direction::North);
-
     }
 }

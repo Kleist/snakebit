@@ -79,8 +79,6 @@ const APP: () = {
         p.GPIOTE.events_in[1].write(|w| unsafe { w.bits(0) });
 
         let mut state = GameState {
-            height: 5,
-            width: 5,
             snake: Vec::new(),
             dir: Direction::North,
         };

@@ -8,6 +8,7 @@ use microbit::hal::nrf51 as _;
 use heapless::consts::U32;
 use heapless::Vec;
 
+#[derive(Debug, PartialEq)]
 pub enum Direction {
     North,
     West,
@@ -29,8 +30,6 @@ const EAST_EDGE: u8 = MAX_WIDTH-1;
 
 pub struct GameState {
     pub snake: Vec<Coord, U32>,
-    pub height: u8,
-    pub width: u8,
     pub dir: Direction,
 }
 
@@ -50,6 +49,26 @@ pub fn next(coord: &Coord, dir: &Direction) -> Option<Coord> {
 
 pub fn step(state: &mut GameState) {
     state.snake[0] = next(&state.snake[0], &state.dir).unwrap()
+}
+
+pub fn turn_left(state: &mut GameState) {
+    use Direction::*;
+    state.dir = match state.dir {
+        North => West,
+        West => South,
+        South => East,
+        East => North
+    }
+}
+
+pub fn turn_right(state: &mut GameState) {
+    use Direction::*;
+    state.dir = match state.dir {
+        West => North,
+        South => West,
+        East => South,
+        North => East
+    }
 }
 
 /// Terminates the application and makes `probe-run` exit with exit-code = 0

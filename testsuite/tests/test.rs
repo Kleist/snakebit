@@ -1,6 +1,16 @@
 #![no_std]
 #![no_main]
 
+pub mod a {
+    use snakebit::{Coord, Direction, GameState};
+    pub fn state_with_dir(dir: Direction) -> GameState{
+        use heapless::Vec;
+        GameState {
+            snake: Vec::from_slice(&[Coord{ x:1, y:0}]).unwrap(),
+            dir: dir
+        }
+    }    
+}
 #[defmt_test::tests]
 mod tests {
     #[test]
@@ -24,14 +34,11 @@ mod tests {
     }
 
     #[test]
-    fn step_north() {
+    fn test_step() {
         use heapless::Vec;
         use snakebit::{step, Coord, Direction, GameState};
 
-        let height = 10;
-        let width = 10;
         let mut state = GameState {
-            height, width,
             snake: Vec::from_slice(&[Coord { x: 2, y: 0 }]).unwrap(),
             dir: Direction::North,
         };
@@ -39,5 +46,37 @@ mod tests {
         step(&mut state);
 
         assert_eq!(Vec::from_slice(&[Coord { x: 2, y: 1 }]), Ok(state.snake));
+    }
+
+    #[test]
+    fn test_turn() {
+        use snakebit::{Direction, turn_left, turn_right};
+        use crate::a::state_with_dir;
+        let mut state = state_with_dir(Direction::North);
+
+        turn_left(&mut state);
+        assert_eq!(state.dir, Direction::West);
+
+        turn_left(&mut state);
+        assert_eq!(state.dir, Direction::South);
+
+        turn_left(&mut state);
+        assert_eq!(state.dir, Direction::East);
+
+        turn_left(&mut state);
+        assert_eq!(state.dir, Direction::North);
+
+        turn_right(&mut state);
+        assert_eq!(state.dir, Direction::East);
+
+        turn_right(&mut state);
+        assert_eq!(state.dir, Direction::South);
+
+        turn_right(&mut state);
+        assert_eq!(state.dir, Direction::West);
+
+        turn_right(&mut state);
+        assert_eq!(state.dir, Direction::North);
+
     }
 }

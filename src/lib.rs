@@ -29,9 +29,13 @@ const MAX_WIDTH: u8 = 5;
 const NORTH_EDGE: u8 = MAX_HEIGHT-1;
 const EAST_EDGE: u8 = MAX_WIDTH-1;
 
+const SPEED_STEPS: u8 = 10; // Approx Smaller is faster - speed ~= 16Hz/SPEED_STEPS steps/second
+const RESTART_STEPS: u8 = 50; // Restart after so many steps ~= SPEED_STEPS/16Hz seconds
+
 pub struct GameState {
     pub snake: Vec<Coord, U32>,
     pub dir: Direction,
+    pub tick: u8,
 }
 
 pub fn next(coord: &Coord, dir: &Direction) -> Option<Coord> {
@@ -48,50 +52,75 @@ pub fn next(coord: &Coord, dir: &Direction) -> Option<Coord> {
     }
 }
 
-pub fn step(state: &mut GameState) -> bool {
-    if let Some(new_coord) = next(&state.snake[0], &state.dir) {
-        let len = state.snake.len();
-        for i in 1..len {
-            if new_coord == state.snake[len-i-1] {
-                defmt::info!("Ran over tail");
-                return false;
-            }
-            state.snake[len-i] = state.snake[len-i-1];
+impl GameState {
+    pub fn new() -> GameState {
+        GameState {
+            snake: Vec::from_slice(&[Coord{x: 2, y: 0}]).unwrap(),
+            dir: Direction::North,
+            tick: 0,
         }
-        state.snake[0] = new_coord;
-        return true;
+    }
+
+    fn restart(&mut self){
+        defmt::info!("Restarting game");
+        *self = GameState::new();
+    }
+
+    pub fn game_tick(&mut self) {
+        self.tick += 1;
+        if self.tick == SPEED_STEPS {
+            if self.step() {
+                self.tick = 0;
+            } else {
+                defmt::info!("Game over");
+            }
+        }
+        else if self.tick == RESTART_STEPS {
+            self.restart();
+        }
+        else if self.tick % 5 == 0 {
+            defmt::info!("tick: {:?}", self.tick);
+        }
+    }
+
+    pub fn step(&mut self) -> bool {
+        if let Some(new_coord) = next(&self.snake[0], &self.dir) {
+            let len = self.snake.len();
+            for i in 1..len {
+                if new_coord == self.snake[len-i-1] {
+                    defmt::info!("Ran over tail");
+                    return false;
+                }
+                self.snake[len-i] = self.snake[len-i-1];
+            }
+            self.snake[0] = new_coord;
+            return true;
+        }
+        
+        defmt::info!("Ran out of bounds");
+        return false;
+    }
+
+    pub fn turn_left(&mut self) {
+        use Direction::*;
+        self.dir = match self.dir {
+            North => West,
+            West => South,
+            South => East,
+            East => North
+        }
     }
     
-    defmt::info!("Ran out of bounds");
-    return false;
-}
-
-pub fn restart() -> GameState {
-    defmt::info!("Restarting game");
-    GameState {
-        snake: Vec::from_slice(&[Coord{x: 2, y: 0}]).unwrap(),
-        dir: Direction::North,
+    pub fn turn_right(&mut self) {
+        use Direction::*;
+        self.dir = match self.dir {
+            West => North,
+            South => West,
+            East => South,
+            North => East
+        }
     }
-}
-
-pub fn turn_left(state: &mut GameState) {
-    use Direction::*;
-    state.dir = match state.dir {
-        North => West,
-        West => South,
-        South => East,
-        East => North
-    }
-}
-
-pub fn turn_right(state: &mut GameState) {
-    use Direction::*;
-    state.dir = match state.dir {
-        West => North,
-        South => West,
-        East => South,
-        North => East
-    }
+    
 }
 
 pub fn render(snake: &[Coord]) -> BitImage {
@@ -106,11 +135,4 @@ pub fn render(snake: &[Coord]) -> BitImage {
         frame[coord.y as usize][coord.x as usize] = 1;
     }
     BitImage::new(&frame)
-}
-
-/// Terminates the application and makes `probe-run` exit with exit-code = 0
-pub fn exit() -> ! {
-    loop {
-        cortex_m::asm::bkpt();
-    }
 }

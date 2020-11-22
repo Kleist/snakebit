@@ -64,8 +64,6 @@ const APP: () = {
         p.GPIOTE.intenset.write(|w| w.in1().set_bit());
         p.GPIOTE.events_in[1].write(|w| unsafe { w.bits(0) });
 
-        let state = snakebit::restart();
-
         let mut timer = MicrobitDisplayTimer::new(p.TIMER1);
         display::initialise_display(&mut timer, &mut p.GPIO);
 
@@ -82,7 +80,7 @@ const APP: () = {
         game_timer.start();
 
         init::LateResources {
-            state: state,
+            state: GameState::new(),
             gpio: p.GPIO,
             gpiote: p.GPIOTE,
             display_timer: timer,
@@ -92,7 +90,7 @@ const APP: () = {
     }
 
     #[task(binds = GPIOTE, priority = 1, resources=[gpiote, display, state])]
-    fn btn(mut cx: btn::Context) {
+    fn btn(cx: btn::Context) {
         let gpiote = cx.resources.gpiote;
         let a_pressed = gpiote.events_in[0].read().bits() != 0;
         let b_pressed = gpiote.events_in[1].read().bits() != 0;
@@ -101,41 +99,22 @@ const APP: () = {
         gpiote.events_in[0].write(|w| unsafe { w.bits(0) });
         gpiote.events_in[1].write(|w| unsafe { w.bits(0) });
 
-        let state = &mut cx.resources.state;
         if a_pressed {
-            snakebit::turn_left(state);
+            cx.resources.state.turn_left();
         }
         if b_pressed {
-            snakebit::turn_right(state);
+            cx.resources.state.turn_right();
         }
     }
 
     #[task(binds = RTC0, priority = 1,
         resources = [game_timer, state, display])]
-    fn game_tick(mut cx: game_tick::Context) {
+    fn game_tick(cx: game_tick::Context) {
         static mut FRAME: MicrobitFrame = MicrobitFrame::const_default();
-        static mut STEP: u8 = 0;
         &cx.resources.game_timer.clear_tick_event();
-        *STEP += 1;
-        if *STEP == 10 {
-            let state = &mut cx.resources.state;
-            if snakebit::step(state) {
-                *STEP = 0;
-                FRAME.set(&snakebit::render(&state.snake));
-                cx.resources.display.set_frame(&FRAME);
-            } else {
-                defmt::info!("Game over");
-            }
-        }
-        else if *STEP == 50 {
-            *cx.resources.state = snakebit::restart();
-            FRAME.set(&snakebit::render(&cx.resources.state.snake));
-            cx.resources.display.set_frame(&FRAME);
-            *STEP = 0;
-        }
-        else if *STEP % 5 == 0 {
-            defmt::info!("Step: {:?}", *STEP);
-        }
+        cx.resources.state.game_tick();
+        FRAME.set(&snakebit::render(&cx.resources.state.snake));
+        cx.resources.display.set_frame(&FRAME);
     }
 
     #[task(binds = TIMER1, priority = 1, resources = [display_timer, gpio, display])]

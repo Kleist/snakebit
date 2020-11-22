@@ -66,6 +66,14 @@ pub fn step(state: &mut GameState) -> bool {
     return false;
 }
 
+pub fn restart() -> GameState {
+    defmt::info!("Restarting game");
+    GameState {
+        snake: Vec::from_slice(&[Coord{x: 2, y: 0}]).unwrap(),
+        dir: Direction::North,
+    }
+}
+
 pub fn turn_left(state: &mut GameState) {
     use Direction::*;
     state.dir = match state.dir {

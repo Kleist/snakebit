@@ -3,8 +3,6 @@
 
 use snakebit as _; // global logger + panicking-behavior + memory layout
 
-use heapless::Vec;
-
 use microbit::hal::lo_res_timer::{LoResTimer, FREQ_16HZ};
 use microbit::hal::nrf51;
 
@@ -12,8 +10,6 @@ use microbit::display::{self, Display, Frame, MicrobitDisplayTimer, MicrobitFram
 
 use rtic::app;
 
-use snakebit::Coord;
-use snakebit::Direction;
 use snakebit::GameState;
 
 #[app(device = microbit::hal::nrf51, peripherals = true)]
@@ -68,11 +64,7 @@ const APP: () = {
         p.GPIOTE.intenset.write(|w| w.in1().set_bit());
         p.GPIOTE.events_in[1].write(|w| unsafe { w.bits(0) });
 
-        let mut state = GameState {
-            snake: Vec::new(),
-            dir: Direction::North,
-        };
-        let _ = state.snake.push(Coord { x: 2, y: 0 });
+        let state = snakebit::restart();
 
         let mut timer = MicrobitDisplayTimer::new(p.TIMER1);
         display::initialise_display(&mut timer, &mut p.GPIO);
@@ -124,19 +116,25 @@ const APP: () = {
         static mut FRAME: MicrobitFrame = MicrobitFrame::const_default();
         static mut STEP: u8 = 0;
         &cx.resources.game_timer.clear_tick_event();
-        if *STEP < 5 {
-            *STEP += 1;
-        }
-        let state = &mut cx.resources.state;
-        if *STEP == 5 {
+        *STEP += 1;
+        if *STEP == 10 {
+            let state = &mut cx.resources.state;
             if snakebit::step(state) {
                 *STEP = 0;
                 FRAME.set(&snakebit::render(&state.snake));
                 cx.resources.display.set_frame(&FRAME);
             } else {
-                *STEP = 10;
                 defmt::info!("Game over");
             }
+        }
+        else if *STEP == 50 {
+            *cx.resources.state = snakebit::restart();
+            FRAME.set(&snakebit::render(&cx.resources.state.snake));
+            cx.resources.display.set_frame(&FRAME);
+            *STEP = 0;
+        }
+        else if *STEP % 5 == 0 {
+            defmt::info!("Step: {:?}", *STEP);
         }
     }
 
